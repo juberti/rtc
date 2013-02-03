@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+
+<!DOCTYPE rfc SYSTEM 'rfc2629.dtd'>
+
+<rfc category='std' docName='draft-pthatcher-mmusic-many-sources-00'>
+
+<?rfc toc='yes' ?>
+<?rfc symrefs='yes' ?>
+<?rfc sortrefs='yes'?>
+<?rfc iprnotified='no' ?>
+<?rfc strict='yes' ?>
+<?rfc compact='yes' ?>
+
+   <front>
+    <title abbrev='Argument for using multiple sources per m= section'>
+      An argument for encoding multiple sources per m= section of SDP,
+      especially in the case where there are many sources which change
+      frequently.
+    </title>
+    <author intials='P.' surname='Thatcher' fullname='Peter Thatcher'>
+      <organization abbrev='Google'>Google</organization>
+    </author>
+    <address>
+      <postal>
+        <street>747 6th St S</street>
+        <city>Kirkland</city>
+        <region>WA</region>
+        <code>98033</code>
+        <country>USA</country>
+      </postal>
+      <email>pthatcher@gmail.com</email>
+    </address>
+    <date />
+    <abstract>
+      <t>
+        This document explains why it is preferable to have multiple
+        media sources encoded in SDP as one m= section rather than
+        many m= sections, especially when there are a large number of
+        video sources which change frequently and need dynamic
+        resolution changes, such as in a video conferencing system.
+      </t>
+    </abstract>
+  </front>
+  <middle>
+    <section title='Introduction'>
+      <t>
+        There's a long debate over whether to encode multiple media
+        sources in SDP as multiple m= sections or whether to encode
+        multiple sources into a single m= section, such as in RFC5576.
+      </t>
+      <t>
+        When there are a large number of sources (10-100, such as in a
+        video conferencing system), multiple m= sections without
+        BUNDLE would require many (10-100) transports, which would
+        incur significant overhead and fragility.  This alone would be
+        sufficient argument for not using multiple m= sections when
+        dealing with large numbers of sources.
+      </t>
+      <t>
+        However, what if we can combine BUNDLE and multiple m=
+        sections?  Would that be usable for scenarios with many
+        sources that change frequently (such as a video conferencing
+        system)?
+      </t>
+      <t>
+        We believe that such an approach (of BUNDLE + many-m-sections)
+        has a number of significant problems when dealing with many
+        sources, and that an approach using multiple sources m=
+        section (as in RFC5576) should be preferred.
+      </t>
+    </section>
+    <section title='The downsides of many, frequently changing m= sections.'>
+      <t>
+        When there are many sources, and when both sides can add or
+        remove sources at any time (which is common in a video
+        conferencing system), using many m= sections has a number of
+        serious problems.
+        <list style='symbols'>
+          <t>
+            If the answer has more sources than the offerer, the
+            answerer cannot put them in the answer.
+          </t>
+          <t>
+            If both ends wish to add or remove sources at the same
+            time, the result is complex signaling glare.  It's unclear
+            how this could be resolved (a known unknown).
+          </t>
+          <t>
+            If one side adds or removes a source at the same time that
+            the other refers to a source (such as signaling a desired
+            resolution for a specific source) the result is more
+            complex signaling glare.  It's unclear how this could be
+            resolved (another known unknown).
+          </t>
+          <t>
+            Adding or removing a source requires sending a full list
+            of all sources, which doesn't scale well to 10s or 100s of
+            sources, especially when they are added or removed
+            frequently.
+          </t>
+          <t>
+            Because this solution requires BUNDLE, which is still not
+            widely supported, it can be deployed in fewer situations,
+            and will take longer to reach usable support.
+          </t>
+          <t>
+            BUNDLE has many complex rules regarding payload types that
+            could complicate the use of per-source attributes with
+            many sources.  For example, if having per-source
+            attributes required the payload types to be different, and
+            there were so many sources that the payload type space
+            were exhausted, then what would we do?  There are lots of
+            "unknown unknowns" here.  Or, as I like to say "thar be
+            dragons".
+          </t>
+        </list>
+      </t>
+    </section>
+    <section title='Responses to the benefits of many m= sections.'>
+      <t>
+       The idea of using many m= sections with BUNDLE is not without
+       merit.  The major benefits that have been suggested are:
+       <list style='numbers'>
+         <t>It allows per-source SDP attributes.</t>
+         <t>We have to support multiple m= sections anyway.</t>
+         <t>There's no advantage to multi-source m= sections.</t>
+         <t>There are many unknowns with having multiple sources per m= section.</t>
+       </list>
+     </t>
+     <t>
+       However:
+       <list style='numbers'>
+         <t>For a multi-source m= section, support for most of the
+         important SDP attributes is already defined on a per-source
+         basis in RFC5576, and the few remaining attributes already
+         have proposals.  In short, this is a solved problem for the
+         multi-source m= section approach, and so the multi-m=section
+         approach doesn't have much of an advantage.</t>
+         <t>While multiple m= sections will still be needed for legacy
+         cases, that does not mean multiple m= sections is suitable
+         for many, frequently changing sources.  As has been shown,
+         there are a number of problems.  We can continue to use
+         multiple m= sections for legacy interop while using multiple
+         sources per m= section going forward so that we can support
+         many sources without the stated problems.</t>
+         <t>As mentioned, many m= sections has a number of significant
+         problems, and the multi-source m= section avoids them.  Thus,
+         it does have advantages.</t>
+         <t>The RFC5576-based approach has already been in use for
+         many years in a major video conferencing system (Google+
+         Hangouts), and has worked very well.  We feel that we have
+         searched the "unknown" space and solved all of the major
+         issues.  In other words, we feel that the multi-source m=
+         section is mostly a solved problem for the case of many
+         sources that change frequently, such as in a video
+         conferencing system.  On the other hand, the multi m= section
+         approach has never been tried by anyone, that we are aware
+         of, with a large number of m= sections and so almost be
+         definition has many unknown unknowns.</t>
+       </list>
+     </t>
+    </section>
+    <section title='Other considerations for a video conferencing system.'>
+      <section title='Per-source negotaition is undesiable'>
+        <t>In a video conferencing system, such as Google+ Hangouts,
+        we have found that it is not only unnecessary to negotiate
+        per-source codecs, RTP header extensions, etc, it's actually
+        something we don't want to do, because it is simply more
+        complexity that isn't needed.  We find that we always want to
+        negotiate the codecs, RTP header extensions, etc, once,
+        independent of sources.
+        </t>
+        <t>
+          Thus, from our view, the per-source codec, RTP header
+          extension, etc, negotiation of the multi m= section approach is
+          not an advantage, but rather a disadvantage.
+        </t>
+      </section>
+      <section title='Source selection'>
+        <t>
+          It is desirable in a video conferencing system to allow the
+          receiver to tell the sender what resolution to send on a
+          per-source basis, and to change that value at any time
+          throughout the call.  As discussed, the multiple m= section
+          approach has a problem when once side selects a source
+          resolution while the other side modifies the list of
+          sources.
+        </t>
+        <t>
+          A multi-source m= section approach avoids this, and work
+          as already begun defining source selection SDP, as in
+          https://tools.ietf.org/html/draft-lennox-mmusic-sdp-source-selection-02
+        </t>
+      </section>
+    </section>
+    <section title='Use in Production'>
+      <t>
+        We'd like to reiterate that an RFC-5576-based approach, with
+        multiple sources per m= section is already in use by Google+
+        Hangouts for doing a form video conferencing.  It has been
+        used successfully for several years for millions of users and
+        conferences and has scaled well for up to tens of simultaneous
+        sources within a video conference.  It is used for logical
+        sources of audio, video, and arbitrary real-time data.
+      </t>
+      <t>
+        We feel that using multiple source per m=section is a proven
+        solution for dealing with large numbers of sources that change
+        frequently, because we've used it and it works.  The "unknown"
+        space has been thoroughly explored.  On the other hand, we see
+        large risk with going down the multiple m=section approach
+        when dealing with many sources.
+      </t>
+    </section>
+    <section title='Conclusion'>
+      We believe that encoding multiple sources as multiple m=
+      sections does not scale well to many sources, has many problems,
+      and many unknowns.  On the contrary, encoding the sources into
+      one m= section, as per RFC5576, scales to many sources, provides
+      a number of advantages, and has fewer unknowns.
+       <list style='numbers'>
+         <t>It allows per-source SDP attributes for most of the important attributes.</t>
+         <t>It scales to many sources in cases where many m= sections don't.</t>
+         <t>It's been used already and the has fewer unknowns.</t>
+       </list>
+    </section>
+  </middle>
+  <back>
+  </back>
+</rfc>
