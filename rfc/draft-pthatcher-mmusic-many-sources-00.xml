@@ -14,23 +14,36 @@
 
    <front>
     <title abbrev='Argument for using multiple sources per m= section'>
-      An argument for encoding multiple sources per m= section of SDP,
-      especially in the case where there are many sources which change
-      frequently.
+      An argument for encoding multiple media sources per m= section of
+      SDP, especially in the case where there are many sources which
+      change frequently.
     </title>
     <author intials='P.' surname='Thatcher' fullname='Peter Thatcher'>
       <organization abbrev='Google'>Google</organization>
+      <address>
+        <postal>
+          <street>747 6th St S</street>
+          <city>Kirkland</city>
+          <region>WA</region>
+          <code>98033</code>
+          <country>USA</country>
+        </postal>
+        <email>pthatcher@gmail.com</email>
+      </address>
     </author>
-    <address>
-      <postal>
-        <street>747 6th St S</street>
-        <city>Kirkland</city>
-        <region>WA</region>
-        <code>98033</code>
-        <country>USA</country>
-      </postal>
-      <email>pthatcher@gmail.com</email>
-    </address>
+    <author intials='J.' surname='Uberti' fullname='Justin Uberti'>
+      <organization abbrev='Google'>Google</organization>
+      <address>
+        <postal>
+          <street>747 6th St S</street>
+          <city>Kirkland</city>
+          <region>WA</region>
+          <code>98033</code>
+          <country>USA</country>
+        </postal>
+        <email>justin@uberti.name</email>
+      </address>
+    </author>
     <date />
     <abstract>
       <t>
