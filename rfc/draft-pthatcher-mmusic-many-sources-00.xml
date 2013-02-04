@@ -3,22 +3,18 @@
 
 <!DOCTYPE rfc SYSTEM 'rfc2629.dtd'>
 
-<rfc category='std' docName='draft-pthatcher-mmusic-many-sources-00'>
-
 <?rfc toc='yes' ?>
 <?rfc symrefs='yes' ?>
 <?rfc sortrefs='yes'?>
 <?rfc iprnotified='no' ?>
 <?rfc strict='yes' ?>
 <?rfc compact='yes' ?>
-
+<rfc category='std' docName='draft-pthatcher-mmusic-many-sources-00' ipr="trust200902">
    <front>
-    <title abbrev='Argument for using multiple sources per m= section'>
-      An argument for encoding multiple media sources per m= section of
-      SDP, especially in the case where there are many sources which
-      change frequently.
+    <title abbrev='Argument for multiple sources per m-line'>
+      An argument for encoding multiple media sources per m= section of SDP.
     </title>
-    <author intials='P.' surname='Thatcher' fullname='Peter Thatcher'>
+    <author initials='P.' surname='Thatcher' fullname='Peter Thatcher'>
       <organization abbrev='Google'>Google</organization>
       <address>
         <postal>
@@ -31,7 +27,7 @@
         <email>pthatcher@gmail.com</email>
       </address>
     </author>
-    <author intials='J.' surname='Uberti' fullname='Justin Uberti'>
+    <author initials='J.' surname='Uberti' fullname='Justin Uberti'>
       <organization abbrev='Google'>Google</organization>
       <address>
         <postal>
@@ -91,20 +87,23 @@
         serious problems.
         <list style='symbols'>
           <t>
-            If the answer has more sources than the offerer, the
-            answerer cannot put them in the answer.
+            If the answerer has more sources than the offerer, the
+            answerer cannot put them in the answer, since the answer must have
+            an equal number of m= sections as the offer.
           </t>
           <t>
             If both ends wish to add or remove sources at the same
-            time, the result is complex signaling glare.  It's unclear
-            how this could be resolved (a known unknown).
+            time, the result is signaling glare, since m= sections are
+            identified by index.  It's unclear
+            how this would be resolved efficiently (a known unknown).
           </t>
           <t>
             If one side adds or removes a source at the same time that
             the other refers to a source (such as signaling a desired
             resolution for a specific source) the result is more
-            complex signaling glare.  It's unclear how this could be
-            resolved (another known unknown).
+            complex signaling glare, again due to the lookup by index.
+            It's unclear how this would be
+            resolved efficiently (another known unknown).
           </t>
           <t>
             Adding or removing a source requires sending a full list
@@ -115,12 +114,26 @@
           <t>
             Because this solution requires BUNDLE, which is still not
             widely supported, it can be deployed in fewer situations,
-            and will take longer to reach usable support.
+            and will take longer to reach usable support. There are many open
+            questions regarding BUNDLE, including whether partial BUNDLEing
+            is allowed; if it is, then adding a new media stream with BUNDLE
+            will result in having to generate new transport candidates, in the
+            event the remote side doesn't want to BUNDLE the new stream.
           </t>
           <t>
-            BUNDLE has many complex rules regarding payload types that
-            could complicate the use of per-source attributes with
-            many sources.  For example, if having per-source
+            With BUNDLE, use of RFC5576 a=ssrc attributes is required in order
+            for the recipient to be able to properly demultiplex incoming
+            RTP. Payload type isn't sufficient as a demux point, since RTCP
+            packets don't contain RTP payload types. Therefore, this approach
+            requires both sides to understand RFC5576, just like the
+            single-m-section approach.
+          </t>
+          <t>
+            BUNDLE has many complex rules regarding how the various SDP
+            attributes in the different m= lines need to be constructed, since
+            there is only a single RTP session. For one, all payload types
+            need to be unique, which could complicate the use of per-source
+            attributes with many sources; if having per-source
             attributes required the payload types to be different, and
             there were so many sources that the payload type space
             were exhausted, then what would we do?  There are lots of
@@ -147,16 +160,21 @@
          <t>For a multi-source m= section, support for most of the
          important SDP attributes is already defined on a per-source
          basis in RFC5576, and the few remaining attributes already
-         have proposals.  In short, this is a solved problem for the
+         have proposals.  As an example, if we wanted to have two audio
+         sources, one with a high bitrate and one with a low bitrate, we could
+         describe that using the per-source fmtp parameters defined in RFC5576
+         to indicate, say, high bitrate Opus for one source and low bitrate
+         Opus for the other.  In short, this is a solved problem for the
          multi-source m= section approach, and so the multi-m=section
          approach doesn't have much of an advantage.</t>
-         <t>While multiple m= sections will still be needed for legacy
-         cases, that does not mean multiple m= sections is suitable
-         for many, frequently changing sources.  As has been shown,
-         there are a number of problems.  We can continue to use
-         multiple m= sections for legacy interop while using multiple
-         sources per m= section going forward so that we can support
-         many sources without the stated problems.</t>
+         <t>While multiple m= sections will still be needed for a finite
+         number of legacy cases, that does not mean multiple m= sections is
+         suitable for all cases, including those with many, frequently changing
+         sources.  As has been shown, there are a number of problems.
+         We can continue to use multiple m= sections in certain cases for
+         legacy interop while using multiple sources per m= section going
+         forward so that we can support many sources without the stated
+         problems.</t>
          <t>As mentioned, many m= sections has a number of significant
          problems, and the multi-source m= section avoids them.  Thus,
          it does have advantages.</t>
@@ -175,19 +193,26 @@
      </t>
     </section>
     <section title='Other considerations for a video conferencing system.'>
-      <section title='Per-source negotaition is undesiable'>
+      <section title='Per-source negotiation is not a major factor'>
         <t>In a video conferencing system, such as Google+ Hangouts,
         we have found that it is not only unnecessary to negotiate
         per-source codecs, RTP header extensions, etc, it's actually
         something we don't want to do, because it is simply more
-        complexity that isn't needed.  We find that we always want to
+        complexity that isn't needed.  We have found that it is best to
         negotiate the codecs, RTP header extensions, etc, once,
-        independent of sources.
+        independent of sources, and then simply select from the negotiated
+        options the settings for each source. This selection can be done by
+        the receiver, but in many cases (e.g. selection of bitrate), it is
+        far better for the sender to make this choice. The sender is aware of
+        the details of the media it is sending, and the bandwidth estimate to
+        the receiver, so it is in a far better position to decide with what
+        options a given source should be encoded (and it can change these
+        options at any time with no signaling delay).
         </t>
         <t>
           Thus, from our view, the per-source codec, RTP header
           extension, etc, negotiation of the multi m= section approach is
-          not an advantage, but rather a disadvantage.
+          not an advantage, but rather an additional complexity.
         </t>
       </section>
       <section title='Source selection'>
@@ -204,6 +229,32 @@
           A multi-source m= section approach avoids this, and work
           as already begun defining source selection SDP, as in
           https://tools.ietf.org/html/draft-lennox-mmusic-sdp-source-selection-02
+        </t>
+      </section>
+      <section title='Extensibility to very large or dynamic conferences'>
+        <t>
+          SDP, by its nature, describes the full state of a session, with no
+          support for partial updates.  Thus, any mechanism for describing or
+          controlling sources based on SDP will become impractical as the
+          number of sources becomes very large (hundreds or more) or the list
+          of sources changes quickly.
+
+          In such scenarios, other mechanisms for describing or controlling
+          sources are preferred.  Several mechanisms along these lines have
+          been proposed, including the CLUE signaling channel (sent on an
+          independent SCTP data channel), extensions to the XCON conference
+          event package (using SIP SUBSCRIBE/NOTIFY), or the Codec Operation
+          Point (COP) messages (sent over RTCP).
+
+          In all these cases, however, SDP mechanisms will be used to describe
+          the RTP sessions that carry the sources that are controlled or
+          described externally.  It is very desirable that the syntax of the
+          SDP descriptions of these sessions be as similar as possible to that
+          of sessions with sources described in SDP.  Multi-source m= sections
+          meet this naturally -- the sessions controlled externally would
+          simply omit the a=ssrc attributes.  The multiple m= line proposal,
+          by contrast, does not appear to have any similarly natural way to
+          extend itself to external control.
         </t>
       </section>
     </section>
@@ -227,16 +278,29 @@
       </t>
     </section>
     <section title='Conclusion'>
+      <t>
       We believe that encoding multiple sources as multiple m=
       sections does not scale well to many sources, has many problems,
       and many unknowns.  On the contrary, encoding the sources into
       one m= section, as per RFC5576, scales to many sources, provides
       a number of advantages, and has fewer unknowns.
        <list style='numbers'>
-         <t>It allows per-source SDP attributes for most of the important attributes.</t>
+         <t>It allows per-source SDP attributes for most of the important
+         attributes.</t>
          <t>It scales to many sources in cases where many m= sections don't.</t>
-         <t>It's been used already and the has fewer unknowns.</t>
+         <t>It's been used already and has fewer unknowns.</t>
        </list>
+      </t>
+    </section>
+    <section title="Security Considerations">
+      <t>None.</t>
+    </section>
+    <section title="IANA Considerations">
+      <t>None.</t>
+    </section>
+    <section title='Acknowledgements'>
+      <t>Jonathan Lennox provided the observations on large or dynamic
+      conferences.</t>
     </section>
   </middle>
   <back>
